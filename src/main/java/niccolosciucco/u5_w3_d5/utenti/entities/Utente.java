@@ -1,6 +1,7 @@
 package niccolosciucco.u5_w3_d5.utenti.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,8 +10,11 @@ import lombok.ToString;
 import niccolosciucco.u5_w3_d5.eventi.entities.Evento;
 import niccolosciucco.u5_w3_d5.prenotazioni.entities.Prenotazione;
 import niccolosciucco.u5_w3_d5.utenti.enums.RuoloUtente;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,7 +24,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @ToString
-public class Utente {
+@JsonIgnoreProperties({"authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
+public class Utente implements UserDetails {
     @Id
     @GeneratedValue
     private UUID id;
@@ -43,5 +48,15 @@ public class Utente {
         this.ruolo = ruolo;
         this.eventiCreati = new ArrayList<>();
         this.prenotazioni = new ArrayList<>();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
     }
 }

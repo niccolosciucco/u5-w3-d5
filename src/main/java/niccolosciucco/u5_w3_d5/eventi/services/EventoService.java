@@ -5,7 +5,6 @@ import niccolosciucco.u5_w3_d5.eventi.entities.Evento;
 import niccolosciucco.u5_w3_d5.eventi.repositories.EventoRepository;
 import niccolosciucco.u5_w3_d5.exceptions.Custom.BadRequest;
 import niccolosciucco.u5_w3_d5.exceptions.Custom.NotFound;
-import niccolosciucco.u5_w3_d5.exceptions.Custom.Unauthorized;
 import niccolosciucco.u5_w3_d5.utenti.entities.Utente;
 import niccolosciucco.u5_w3_d5.utenti.enums.RuoloUtente;
 import niccolosciucco.u5_w3_d5.utenti.services.UtenteService;
@@ -37,19 +36,21 @@ public class EventoService {
                 .orElseThrow(() -> new NotFound("Evento con ID " + id + " non trovato"));
     }
 
-    public Evento post(EventoDTO dto) {
-        Utente organizzatore = this.utenteService.findById(dto.organizzatoreId());
-
-        if (organizzatore.getRuolo() != RuoloUtente.ORGANIZZATORE) {
-            throw new Unauthorized("Solo gli organizzatori possono creare eventi!");
+    public Evento post(EventoDTO dto, Utente organizzatoreLoggato) {
+        if (organizzatoreLoggato.getRuolo() != RuoloUtente.ORGANIZZATORE) {
+            throw new BadRequest("Solo gli organizzatori possono creare eventi!");
         }
 
-        Evento nuovoEvento = new Evento(dto.titolo(), dto.descrizione(), dto.data(), dto.luogo(), dto.postiMassimi(), dto.postiMassimi(), organizzatore);
+        Evento nuovoEvento = new Evento(dto.titolo(), dto.descrizione(), dto.data(), dto.luogo(), dto.postiMassimi(), dto.postiMassimi(), organizzatoreLoggato);
+
         return this.eventoRepository.save(nuovoEvento);
     }
 
-    public Evento put(UUID id, EventoDTO dto) {
+    public Evento put(UUID id, EventoDTO dto, Utente organizzatoreLoggato) {
         Evento found = this.findById(id);
+        if (!found.getOrganizzatore().getId().equals(organizzatoreLoggato.getId())) {
+            throw new BadRequest("Non sei autorizzato a modificare questo evento");
+        }
 
         if (!(found.getPostiMassimi() == (dto.postiMassimi()))) {
             int postiPrenotati = found.getPostiMassimi() - found.getPostiDisponibili();
@@ -69,8 +70,20 @@ public class EventoService {
         return this.eventoRepository.save(found);
     }
 
-    public void delete(UUID id) {
+    public void delete(UUID id, Utente organizzatoreLoggato) {
         Evento found = this.findById(id);
-        this.eventoRepository.delete(found);
+
+        if (!found.getOrganizzatore().getId().equals(organizzatoreLoggato.getId())) {
+            throw new BadRequest("Non hai l'autorizzazione a eliminare questo evento");
+        }
+
+        int postiPrenotati = found.getPostiMassimi() - found.getPostiDisponibili();
+
+        if (postiPrenotati > 0) {
+            found.setPostiDisponibili(0);
+            this.eventoRepository.save(found);
+        } else {
+            this.eventoRepository.delete(found);
+        }
     }
 }

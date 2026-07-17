@@ -5,14 +5,17 @@ import niccolosciucco.u5_w3_d5.eventi.repositories.EventoRepository;
 import niccolosciucco.u5_w3_d5.exceptions.Custom.AlreadyInDb;
 import niccolosciucco.u5_w3_d5.exceptions.Custom.BadRequest;
 import niccolosciucco.u5_w3_d5.exceptions.Custom.NotFound;
+import niccolosciucco.u5_w3_d5.exceptions.Custom.Unauthorized;
 import niccolosciucco.u5_w3_d5.prenotazioni.DTO.PrenotazioneDTO;
 import niccolosciucco.u5_w3_d5.prenotazioni.entities.Prenotazione;
 import niccolosciucco.u5_w3_d5.prenotazioni.repositories.PrenotazioneRepository;
 import niccolosciucco.u5_w3_d5.utenti.entities.Utente;
+import niccolosciucco.u5_w3_d5.utenti.enums.RuoloUtente;
 import niccolosciucco.u5_w3_d5.utenti.services.UtenteService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -35,9 +38,11 @@ public class PrenotazioneService {
                 .orElseThrow(() -> new NotFound("Prenotazione con ID " + id + " non trovata"));
     }
 
-    public Prenotazione post(PrenotazioneDTO dto) {
-        Utente utente = this.utenteService.findById(dto.utenteId());
+    public List<Prenotazione> findByUtente(Utente utente) {
+        return this.prenotazioneRepository.findByUtente(utente);
+    }
 
+    public Prenotazione post(PrenotazioneDTO dto, Utente utenteLoggato) {
         Evento evento = this.eventoRepository.findById(dto.eventoId())
                 .orElseThrow(() -> new NotFound("Evento non trovato con ID " + dto.eventoId()));
 
@@ -45,11 +50,11 @@ public class PrenotazioneService {
             throw new BadRequest("I posti per l'evento '" + evento.getTitolo() + "' sono esauriti!");
         }
 
-        if (this.prenotazioneRepository.existsByUtenteAndEvento(utente, evento)) {
+        if (this.prenotazioneRepository.existsByUtenteAndEvento(utenteLoggato, evento)) {
             throw new AlreadyInDb("Hai già una prenotazione attiva per questo evento!");
         }
 
-        Prenotazione prenotazione = new Prenotazione(utente, evento, LocalDateTime.now());
+        Prenotazione prenotazione = new Prenotazione(utenteLoggato, evento, LocalDateTime.now());
 
         evento.setPostiDisponibili(evento.getPostiDisponibili() - 1);
         this.eventoRepository.save(evento);
@@ -57,8 +62,15 @@ public class PrenotazioneService {
         return this.prenotazioneRepository.save(prenotazione);
     }
 
-    public void delete(UUID prenotazioneId) {
+    public void delete(UUID prenotazioneId, Utente utenteLoggato) {
         Prenotazione prenotazione = this.findById(prenotazioneId);
+        boolean isOwner = prenotazione.getUtente().getId().equals(utenteLoggato.getId());
+        boolean isOrganizzatore = utenteLoggato.getRuolo() == RuoloUtente.ORGANIZZATORE;
+
+        if (!isOwner && !isOrganizzatore) {
+            throw new Unauthorized("Non sei autorizzato a cancellare questa prenotazione");
+        }
+
         Evento evento = prenotazione.getEvento();
 
         evento.setPostiDisponibili(evento.getPostiDisponibili() + 1);

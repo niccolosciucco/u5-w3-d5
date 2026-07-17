@@ -3,7 +3,6 @@ package niccolosciucco.u5_w3_d5.eventi.DTO;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public record EventoDTO(
         @NotBlank(message = "Il titolo dell'evento è obbligatorio")
@@ -23,9 +22,6 @@ public record EventoDTO(
 
         @NotNull(message = "Il numero di posti massimi è obbligatorio")
         @Min(value = 1, message = "L'evento deve avere almeno 1 posto disponibile")
-        Integer postiMassimi,
-
-        @NotNull(message = "L'ID dell'organizzatore è obbligatorio")
-        UUID organizzatoreId
+        Integer postiMassimi
 ) {
 }

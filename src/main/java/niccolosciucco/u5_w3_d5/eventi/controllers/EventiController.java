@@ -3,8 +3,11 @@ package niccolosciucco.u5_w3_d5.eventi.controllers;
 import niccolosciucco.u5_w3_d5.eventi.DTO.EventoDTO;
 import niccolosciucco.u5_w3_d5.eventi.entities.Evento;
 import niccolosciucco.u5_w3_d5.eventi.services.EventoService;
+import niccolosciucco.u5_w3_d5.utenti.entities.Utente;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,18 +34,23 @@ public class EventiController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Evento post(@RequestBody @Validated EventoDTO body) {
-        return this.eventoService.post(body);
+    @PreAuthorize("hasAuthority('ORGANIZZATORE')") // Solo gli organizzatori possono creare eventi
+    public Evento post(@RequestBody @Validated EventoDTO body,
+                       @AuthenticationPrincipal Utente organizzatoreLoggato) {
+        return this.eventoService.post(body, organizzatoreLoggato);
     }
 
     @PutMapping("/{id}")
-    public Evento put(@PathVariable UUID id, @RequestBody @Validated EventoDTO body) {
-        return this.eventoService.put(id, body);
+    @PreAuthorize("hasAuthority('ORGANIZZATORE')")
+    public Evento put(@PathVariable UUID id, @RequestBody @Validated EventoDTO body,
+                      @AuthenticationPrincipal Utente organizzatoreLoggato) {
+        return this.eventoService.put(id, body, organizzatoreLoggato);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable UUID id) {
-        this.eventoService.delete(id);
+    @PreAuthorize("hasAuthority('ORGANIZZATORE')")
+    public void delete(@PathVariable UUID id, @AuthenticationPrincipal Utente organizzatoreLoggato) {
+        this.eventoService.delete(id, organizzatoreLoggato);
     }
 }

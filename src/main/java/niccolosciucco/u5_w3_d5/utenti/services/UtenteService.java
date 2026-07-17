@@ -11,6 +11,7 @@ import niccolosciucco.u5_w3_d5.utenti.repositories.UtenteRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -20,13 +21,16 @@ public class UtenteService {
     private final UtenteRepository utenteRepository;
     private final EventoRepository eventoRepository;
     private final PrenotazioneRepository prenotazioneRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UtenteService(UtenteRepository utenteRepository,
                          EventoRepository eventoRepository,
-                         PrenotazioneRepository prenotazioneRepository) {
+                         PrenotazioneRepository prenotazioneRepository,
+                         PasswordEncoder passwordEncoder) {
         this.utenteRepository = utenteRepository;
         this.eventoRepository = eventoRepository;
         this.prenotazioneRepository = prenotazioneRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Page<Utente> getAll(int page) {
@@ -39,18 +43,24 @@ public class UtenteService {
                 .orElseThrow(() -> new NotFound("Utente con ID " + id + " non trovato"));
     }
 
+    public Utente findByUsername(String username) {
+        return this.utenteRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFound("Utente con username " + username + " non trovato"));
+    }
+
     public Utente post(UtenteDTO dto) {
         if (this.utenteRepository.existsByUsername(dto.username())) {
             throw new AlreadyInDb("Lo username '" + dto.username() + "' è già in uso");
         }
 
-        Utente nuovoUtente = new Utente(dto.username(), dto.password(), dto.ruolo());
+        Utente nuovoUtente = new Utente(dto.username(), this.passwordEncoder.encode(dto.password()), dto.ruolo());
 
         return this.utenteRepository.save(nuovoUtente);
     }
 
     public Utente put(UUID id, UtenteDTO dto) {
         Utente found = this.findById(id);
+
         if (!found.getUsername().equals(dto.username()) && this.utenteRepository.existsByUsername(dto.username())) {
             throw new AlreadyInDb("Lo username '" + dto.username() + "' è già in uso");
         }
@@ -62,8 +72,8 @@ public class UtenteService {
             isChanged = true;
         }
 
-        if (!found.getPassword().equals(dto.password())) {
-            found.setPassword(dto.password());
+        if (!this.passwordEncoder.matches(dto.password(), found.getPassword())) {
+            found.setPassword(this.passwordEncoder.encode(dto.password()));
             isChanged = true;
         }
 
