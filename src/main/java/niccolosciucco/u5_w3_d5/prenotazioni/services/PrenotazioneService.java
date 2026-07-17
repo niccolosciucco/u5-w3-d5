@@ -23,7 +23,7 @@ public class PrenotazioneService {
 
     private final PrenotazioneRepository prenotazioneRepository;
     private final UtenteService utenteService;
-    private final EventoRepository eventoRepository; // Iniettato direttamente per aggiornare i posti dell'evento
+    private final EventoRepository eventoRepository;
 
     public PrenotazioneService(PrenotazioneRepository prenotazioneRepository,
                                UtenteService utenteService,

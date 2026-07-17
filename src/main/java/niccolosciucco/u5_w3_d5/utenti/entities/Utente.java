@@ -38,8 +38,10 @@ public class Utente implements UserDetails {
     @Column(nullable = false)
     private RuoloUtente ruolo;
     @OneToMany(mappedBy = "organizzatore", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Evento> eventiCreati;
     @OneToMany(mappedBy = "utente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Prenotazione> prenotazioni;
 
     public Utente(String username, String password, RuoloUtente ruolo) {
@@ -52,7 +54,7 @@ public class Utente implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority(this.ruolo.name()));
     }
 
     @Override
