@@ -29,9 +29,9 @@ public class Prenotazione {
     @JoinColumn(name = "evento_id", nullable = false)
     private Evento evento;
 
-    public Prenotazione(LocalDateTime dataPrenotazione, Utente utente, Evento evento) {
-        this.dataPrenotazione = dataPrenotazione;
+    public Prenotazione(Utente utente, Evento evento, LocalDateTime dataPrenotazione) {
         this.utente = utente;
         this.evento = evento;
+        this.dataPrenotazione = dataPrenotazione;
     }
 }

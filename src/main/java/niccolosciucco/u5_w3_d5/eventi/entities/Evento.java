@@ -9,6 +9,7 @@ import niccolosciucco.u5_w3_d5.prenotazioni.entities.Prenotazione;
 import niccolosciucco.u5_w3_d5.utenti.entities.Utente;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,7 +41,7 @@ public class Evento {
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Prenotazione> prenotazioni;
 
-    public Evento(String titolo, String descrizione, LocalDateTime data, String luogo, int postiMassimi, int postiDisponibili, Utente organizzatore, List<Prenotazione> prenotazioni) {
+    public Evento(String titolo, String descrizione, LocalDateTime data, String luogo, int postiMassimi, int postiDisponibili, Utente organizzatore) {
         this.titolo = titolo;
         this.descrizione = descrizione;
         this.data = data;
@@ -48,6 +49,6 @@ public class Evento {
         this.postiMassimi = postiMassimi;
         this.postiDisponibili = postiDisponibili;
         this.organizzatore = organizzatore;
-        this.prenotazioni = prenotazioni;
+        this.prenotazioni = new ArrayList<>();
     }
 }
